@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+@theme {
+  /* NURA Primary Colors */
+  --color-surface: #fbf9f5;
+  --color-nura-yellow: #facc15;
+  --color-nura-primary: #735c00;
+  --color-on-surface: #1b1c1a;
+  --color-outline-variant: rgba(209, 198, 171, 0.15);
+
+  /* Landing Page Specific Colors */
+  --color-surface-container-low: #f5f3ef;
+  --color-surface-container-lowest: #ffffff;
+  --color-on-surface-variant: #4d4632;
+  --color-primary-container: #facc15;
+
+  /* NURA Fonts */
+  --font-sans: "Inter", ui-sans-serif, system-ui;
+  --font-display: "Manrope", ui-sans-serif, system-ui;
+
+  /* Custom Border Radius */
+  --radius-xl: 0.75rem;
+}
+
+@layer base {
+  body {
+    @apply bg-surface text-on-surface antialiased;
+    font-family: var(--font-sans);
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    @apply font-bold;
+  }
+}
