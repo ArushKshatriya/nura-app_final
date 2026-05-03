@@ -4,6 +4,8 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = {
   title: 'NURA | Sustainable Diet Planning',
   description: 'Fuel your body. Balance your footprint.',
+  icons: {
+    icon: "/fevicon.ico",}
 }
 
 export default function RootLayout({
