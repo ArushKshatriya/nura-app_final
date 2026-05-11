@@ -280,7 +280,7 @@ export default function LandingPage() {
         </div>
         <div className="bg-white px-10 py-6 rounded-3xl text-center shadow-lg border border-slate-50 relative group">
           <div className="text-5xl font-black text-[#0f172a] group-hover:text-[#735c00] transition-colors">
-            85%
+            NURA
           </div>
           <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
             Carbon Reduction
@@ -293,7 +293,6 @@ export default function LandingPage() {
       <footer className="max-w-7xl mx-auto px-12 py-8 flex justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest">
         <div>NURA</div>
         <div className="flex gap-8">
-          <Link href="#">Terms of Service</Link>
           <span>© 2026 NURA Sustainability. All rights reserved.</span>
         </div>
       </footer>
