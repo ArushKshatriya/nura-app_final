@@ -18,7 +18,7 @@ export async function POST(req: Request) {
             parts: [{ 
               text: `Analyze nutrition for ${mealName} (${mealType}). 
                      Return ONLY JSON: {"cal": number, "pro": number, "carb": number, "fat": number, "co2": number, "name": "string"}
-                     The co2 field MUST be returned in Kilograms (kg). For most meals, this will be a decimal between 0.1 and 2.0. Never return grams (e.g., return 0.05 for coffee, not 50).`
+                     The co2 field MUST be returned in Kilograms (kg). For most meals, this will be a decimal between 0.1 and 2.0. Never return grams (e.g., return 0.05 for coffee, not 50. 4.5 for beef).`
             }]
           }],
           generationConfig: {
