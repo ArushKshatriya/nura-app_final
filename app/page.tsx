@@ -203,14 +203,6 @@ export default function LandingPage() {
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                     Password
                   </label>
-                  {!isSignUp && (
-                    <Link
-                      href="#"
-                      className="text-[10px] font-bold text-[#735c00] hover:underline"
-                    >
-                      FORGOT PASSWORD?
-                    </Link>
-                  )}
                 </div>
                 <input
                   type="password"
