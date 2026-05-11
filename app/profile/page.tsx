@@ -353,7 +353,7 @@ export default function ProfilePage() {
                         }
                         className="w-full px-5 py-4 rounded-2xl bg-[#f1f3f5] outline-none font-bold text-lg"
                       />
-                      <span className="absolute right-5 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-sm">
+                      <span className="absolute right-12 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-sm">
                         kcal
                       </span>
                     </div>
