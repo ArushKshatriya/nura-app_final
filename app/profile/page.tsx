@@ -75,7 +75,7 @@ export default function ProfilePage() {
     const score = Number(weight) / (hInMeters * hInMeters);
     const scoreFixed = score.toFixed(1);
 
-    let category = { label: "Healthy", color: "text-green-500", plan: "standard" };
+    let category = { label: "Healthy", color: "text-green-500", plan: "eco-maintenance/build" };
     const s = parseFloat(scoreFixed);
 
     if (s < 18.5) category = { label: "Underweight", color: "text-blue-500", plan: "weight-gain" };
@@ -304,8 +304,8 @@ export default function ProfilePage() {
                           key={opt}
                           onClick={() => setGender(opt)}
                           className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${gender === opt
-                              ? "bg-white text-black shadow-sm"
-                              : "text-slate-400 hover:text-slate-600"
+                            ? "bg-white text-black shadow-sm"
+                            : "text-slate-400 hover:text-slate-600"
                             }`}
                         >
                           {opt.charAt(0).toUpperCase() + opt.slice(1)}
@@ -361,8 +361,8 @@ export default function ProfilePage() {
                             type="button"
                             onClick={() => handleUnitChange(u)}
                             className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${heightUnit === u
-                                ? "bg-white text-black shadow-sm"
-                                : "text-slate-400 hover:text-slate-600"
+                              ? "bg-white text-black shadow-sm"
+                              : "text-slate-400 hover:text-slate-600"
                               }`}
                           >
                             {u}
@@ -388,8 +388,8 @@ export default function ProfilePage() {
                       key={option.id}
                       onClick={() => setDietType(option.id)} // Replace with setDietType if you've added that state
                       className={`relative flex items-center gap-4 p-5 rounded-3xl border-2 transition-all duration-300 ${dietType === option.id // Replace with dietType state check
-                          ? "border-black bg-gray-50 shadow-inner"
-                          : "border-gray-50 hover:border-gray-200 bg-white"
+                        ? "border-black bg-gray-50 shadow-inner"
+                        : "border-gray-50 hover:border-gray-200 bg-white"
                         }`}
                     >
                       <div className={`p-3 rounded-2xl ${option.color}`}>
@@ -478,6 +478,48 @@ export default function ProfilePage() {
               </section>
             </div>
           </div>
+
+          {/* BMI Intelligence Card - Moved to Full Width for better layout */}
+          {bmiData && (
+            <div className="mt-8 bg-slate-950 p-6 md:p-8 rounded-[2.5rem] text-white flex flex-col md:flex-row items-center justify-between border border-white/5 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-500">
+              <div className="flex items-center gap-6 mb-4 md:mb-0">
+                <div className="flex flex-col">
+                  <p className="text-[13px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2">
+                    Health Analysis (BMI)
+                  </p>
+                  <div className="flex items-baseline gap-3">
+                    <span className="text-5xl font-black italic tracking-tighter">
+                      {bmiData.score}
+                    </span>
+                    <div className="flex flex-col">
+                      <span className={`text-sm font-black uppercase tracking-tight ${bmiData.color}`}>
+                        {bmiData.label}
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-bold uppercase">
+                        Condition
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              ̰
+              <div className="flex flex-row md:flex-col items-center md:items-end gap-4 w-full md:w-auto pt-4 md:pt-0 border-t md:border-t-0 border-white/10">
+                <div className="flex-1 md:text-right">
+                  <p className="text-[12px] font-black text-slate-500 uppercase tracking-widest mb-1">
+                    Recommended Strategy
+                  </p>
+                  <p className="text-xs font-bold text-white uppercase tracking-tight">
+                    {bmiData.plan.replace('-', ' ')}
+                  </p>
+                </div>
+                <Link href="/diet-plan">
+                  <button className="bg-[#facc15] text-black text-[15px] font-black py-3 px-6 rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-[0_10px_20px_rgba(250,204,21,0.2)]">
+                    CHOOSE PLAN
+                  </button>
+                </Link>
+              </div>
+            </div>
+          )}
 
           <div className="flex justify-end items-center gap-6 mt-12 pt-8 border-t border-slate-100">
             <button className="text-sm font-bold text-slate-400 hover:text-slate-600 transition-colors">
