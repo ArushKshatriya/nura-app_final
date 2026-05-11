@@ -21,8 +21,9 @@ export async function POST(req: Request) {
   Task: Create a 3-meal plan. 
   Logic:
   1. Use the "Current Pantry" items as the foundation for the meals.
-  2. If the pantry is incomplete (e.g., only has eggs), SUGGEST (use meat items less and not in every meal-once or twice is fine) and INCLUDE additional healthy ingredients needed to make a complete meal (Avoid adding beef/pork).
+  2. If the pantry is incomplete (e.g., only has eggs), SUGGEST and INCLUDE additional healthy ingredients needed to make a complete meal (add beef/pork/fish only if available in pantry).
   3. Ensure the plan remains strictly ${dietType} and optimized for ${currentPlan} and also INDIAN cuisine.
+  4. Add a vegetarian meal (usually breakfast) and use meat for only 1 or 2 meals on random if ${dietType} supports.
 
   Return strictly JSON:
   {
