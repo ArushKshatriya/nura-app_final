@@ -17,7 +17,7 @@ export async function POST(req: Request) {
         body: JSON.stringify({
           contents: [{
             parts: [{ 
-              text: `Suggest ONE sustainable, lower-carbon food swap for: "${mealName}".
+              text: `Suggest ONE sustainable, lower-carbon food swap with similar nutriton aspects for: "${mealName}".
                      
                      Return ONLY JSON with this structure:
                      {
@@ -28,9 +28,11 @@ export async function POST(req: Request) {
                      }
                      
                      Guidelines:
+                     
                      1. If the original is meat-heavy (especially beef/lamb), suggest plant-based or lower-impact alternatives (lentils, chicken, tofu).
                      2. The "co2" value MUST be in Kilograms (kg) and MUST be lower than the original impact.
-                     3. Keep the "reason" punchy and professional.`
+                     3. Keep the "reason" punchy and professional.
+                     4. The suggested swaps should be indian or universal`
             }]
           }],
           generationConfig: {
