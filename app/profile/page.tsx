@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -14,11 +14,26 @@ export default function ProfilePage() {
   const [location, setLocation] = useState("Thane, India");
   const [gender, setGender] = useState("male");
   const [weight, setWeight] = useState(55);
+  const [height, setHeight] = useState<number | string>("");
+  const [heightUnit, setHeightUnit] = useState("cm");
   const [calorieGoal, setCalorieGoal] = useState(2000);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [dietType, setDietType] = useState("non-veg");
   const [currentPlan, setCurrentPlan] = useState("eco-maintenance");
+  const handleUnitChange = (newUnit: string) => {
+    if (height && height !== "") {
+      const currentVal = Number(height);
+      if (newUnit === "cm" && heightUnit === "ft") {
+        // Feet to CM (1 ft = 30.48 cm)
+        setHeight(Math.round(currentVal * 30.48));
+      } else if (newUnit === "ft" && heightUnit === "cm") {
+        // CM to Feet (1 cm = 0.0328084 ft)
+        setHeight((currentVal * 0.0328084).toFixed(1));
+      }
+    }
+    setHeightUnit(newUnit);
+  };
   const dietOptions = [
     {
       id: "veg",
@@ -46,6 +61,30 @@ export default function ProfilePage() {
     },
   ];
 
+  // BMI Calculation Logic
+  const bmiData = useMemo(() => {
+    if (!height || !weight) return null;
+
+    let hInMeters = 0;
+    if (heightUnit === "cm") {
+      hInMeters = Number(height) / 100;
+    } else {
+      hInMeters = Number(height) * 0.3048; // ft to meters
+    }
+
+    const score = Number(weight) / (hInMeters * hInMeters);
+    const scoreFixed = score.toFixed(1);
+
+    let category = { label: "Healthy", color: "text-green-500", plan: "standard" };
+    const s = parseFloat(scoreFixed);
+
+    if (s < 18.5) category = { label: "Underweight", color: "text-blue-500", plan: "weight-gain" };
+    else if (s >= 25 && s < 30) category = { label: "Overweight", color: "text-orange-500", plan: "weight-loss" };
+    else if (s >= 30) category = { label: "Obese", color: "text-red-500", plan: "weight-loss" };
+
+    return { score: scoreFixed, ...category };
+  }, [height, weight, heightUnit]);
+
   useEffect(() => {
     async function getProfile() {
       setLoading(true);
@@ -59,7 +98,7 @@ export default function ProfilePage() {
         const { data: profileData } = await supabase
           .from("Profiles")
           .select(
-            "full_name, gender, calorie_goal, weight, location, diet_type, current_plan",
+            "full_name, gender, calorie_goal, weight, height, location, diet_type, current_plan",
           )
           .eq("id", user.id)
           .single();
@@ -69,6 +108,7 @@ export default function ProfilePage() {
           setGender(profileData.gender || "male");
           setCalorieGoal(profileData.calorie_goal || 2000);
           setWeight(profileData.weight || 55);
+          setHeight(profileData.height || "");
           setLocation(profileData.location || "Thane, India");
 
           // 2. SET the states so the UI highlights the correct cards
@@ -100,6 +140,7 @@ export default function ProfilePage() {
           calorie_goal: calorieGoal,
           location: location,
           weight: weight,
+          height: height,
           diet_type: dietType,
         })
         .eq("id", user.id);
@@ -262,11 +303,10 @@ export default function ProfilePage() {
                         <button
                           key={opt}
                           onClick={() => setGender(opt)}
-                          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                            gender === opt
+                          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${gender === opt
                               ? "bg-white text-black shadow-sm"
                               : "text-slate-400 hover:text-slate-600"
-                          }`}
+                            }`}
                         >
                           {opt.charAt(0).toUpperCase() + opt.slice(1)}
                         </button>
@@ -295,6 +335,42 @@ export default function ProfilePage() {
                       </span>
                     </div>
                   </div>
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold text-slate-400 uppercase px-1 tracking-wider">
+                      Height
+                    </label>
+                    <div className="flex gap-3">
+                      <div className="relative flex-1 group">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-lg group-focus-within:text-[#facc15] transition-colors">
+                          straighten
+                        </span>
+                        <input
+                          type="number"
+                          step="0.1"
+                          value={height}
+                          onChange={(e) => setHeight(e.target.value)}
+                          className="w-full pl-12 pr-4 py-4 rounded-2xl bg-[#f1f3f5] outline-none font-bold text-lg focus:bg-white focus:ring-2 focus:ring-[#facc15] transition-all placeholder:text-slate-300"
+                          placeholder={heightUnit === "cm" ? "175" : "5.8"}
+                        />
+                      </div>
+
+                      <div className="flex p-1.5 bg-[#f1f3f5] rounded-2xl">
+                        {["cm", "ft"].map((u) => (
+                          <button
+                            key={u}
+                            type="button"
+                            onClick={() => handleUnitChange(u)}
+                            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${heightUnit === u
+                                ? "bg-white text-black shadow-sm"
+                                : "text-slate-400 hover:text-slate-600"
+                              }`}
+                          >
+                            {u}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </section>
 
@@ -311,11 +387,10 @@ export default function ProfilePage() {
                     <button
                       key={option.id}
                       onClick={() => setDietType(option.id)} // Replace with setDietType if you've added that state
-                      className={`relative flex items-center gap-4 p-5 rounded-3xl border-2 transition-all duration-300 ${
-                        dietType === option.id // Replace with dietType state check
+                      className={`relative flex items-center gap-4 p-5 rounded-3xl border-2 transition-all duration-300 ${dietType === option.id // Replace with dietType state check
                           ? "border-black bg-gray-50 shadow-inner"
                           : "border-gray-50 hover:border-gray-200 bg-white"
-                      }`}
+                        }`}
                     >
                       <div className={`p-3 rounded-2xl ${option.color}`}>
                         {option.icon}
