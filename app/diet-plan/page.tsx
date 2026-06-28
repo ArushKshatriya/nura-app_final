@@ -204,50 +204,56 @@ export default function DietPlan() {
 
   return (
     <div className="flex min-h-screen bg-[#fbfbf9] text-[#1a1c1e] font-sans">
-      {/* Sidebar Layout panel */}
-      <aside className="w-64 border-r border-slate-100 p-8 flex-col gap-10 bg-white hidden lg:flex shrink-0">
-        <div className="flex items-center gap-2 font-bold text-xl tracking-tighter">
+      {/* RESPONSIVE NAVIGATION: FIXED BOTTOM ON MOBILE / SIDEBAR ON DESKTOP */}
+      <aside className="fixed bottom-0 inset-x-0 bg-white border-t border-slate-100 p-4 flex flex-row justify-around items-center z-50 lg:sticky lg:inset-y-0 lg:left-0 lg:w-64 lg:h-screen lg:border-t-0 lg:border-r lg:p-8 lg:flex-col lg:justify-start lg:gap-10 shrink-0">
+        <div className="hidden lg:flex items-center gap-2 font-bold text-xl tracking-tighter">
           <span className="text-[#735c00]">🍃</span> NURA
         </div>
-        <nav className="flex flex-col gap-2">
+        <nav className="flex w-full flex-row justify-around lg:flex-col lg:gap-2">
           <Link
             href="/dashboard"
-            className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-black transition-colors text-sm font-medium"
+            className="flex flex-col lg:flex-row items-center gap-1 lg:gap-3 px-3 py-2 lg:px-4 lg:py-3 text-slate-400 hover:text-black transition-colors text-xs lg:text-sm font-medium"
           >
-            <span className="material-symbols-outlined text-sm">dashboard</span>{" "}
-            Dashboard
+            <span className="material-symbols-outlined text-lg lg:text-sm">
+              dashboard
+            </span>{" "}
+            <span className="text-[10px] lg:text-sm">Dashboard</span>
           </Link>
           <Link
             href="/eco-swap"
-            className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-black transition-colors text-sm font-medium"
+            className="flex flex-col lg:flex-row items-center gap-1 lg:gap-3 px-3 py-2 lg:px-4 lg:py-3 text-slate-400 hover:text-black transition-colors text-xs lg:text-sm font-medium"
           >
-            <span className="material-symbols-outlined text-sm">eco</span>{" "}
-            Eco-Swap
+            <span className="material-symbols-outlined text-lg lg:text-sm">
+              eco
+            </span>{" "}
+            <span className="text-[10px] lg:text-sm">Eco-Swap</span>
           </Link>
           <Link
             href="/shopping-list"
-            className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-black transition-colors text-sm font-medium"
+            className="flex flex-col lg:flex-row items-center gap-1 lg:gap-3 px-3 py-2 lg:px-4 lg:py-3 text-slate-400 hover:text-black transition-colors text-xs lg:text-sm font-medium"
           >
-            <span className="material-symbols-outlined text-sm">
+            <span className="material-symbols-outlined text-lg lg:text-sm">
               shopping_basket
             </span>{" "}
-            Pantry
+            <span className="text-[10px] lg:text-sm">Pantry</span>
           </Link>
           <Link
             href="/diet-plan"
-            className="flex items-center gap-3 px-4 py-3 bg-[#facc15]/10 text-[#735c00] rounded-xl font-bold text-sm"
+            className="flex flex-col lg:flex-row items-center gap-1 lg:gap-3 px-4 py-2 lg:px-4 lg:py-3 bg-[#facc15]/10 text-[#735c00] rounded-xl font-bold text-xs lg:text-sm"
           >
-            <span className="material-symbols-outlined text-sm">
+            <span className="material-symbols-outlined text-lg lg:text-sm">
               restaurant_menu
             </span>{" "}
-            Diet Plan
+            <span className="text-[10px] lg:text-sm">Diet Plan</span>
           </Link>
           <Link
             href="/profile"
-            className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-black transition-colors text-sm font-medium"
+            className="flex flex-col lg:flex-row items-center gap-1 lg:gap-3 px-3 py-2 lg:px-4 lg:py-3 text-slate-400 hover:text-black transition-colors text-xs lg:text-sm font-medium"
           >
-            <span className="material-symbols-outlined text-sm">person</span>{" "}
-            Profile
+            <span className="material-symbols-outlined text-lg lg:text-sm">
+              person
+            </span>{" "}
+            <span className="text-[10px] lg:text-sm">Profile</span>
           </Link>
         </nav>
       </aside>
