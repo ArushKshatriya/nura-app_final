@@ -320,6 +320,57 @@ export default function Dashboard() {
         </button>
       </aside>
 
+      {/* 2. MOBILE BOTTOM NAVIGATION: Fixed to screen bottom on viewport widths under 1024px (lg:hidden) */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 px-4 py-2 flex justify-around items-center z-50 shadow-[0_-10px_30px_rgba(0,0,0,0.04)]">
+        <Link
+          href="/dashboard"
+          className="flex flex-col items-center gap-1 p-2 text-[#735c00] font-bold"
+        >
+          <span className="material-symbols-outlined text-xl">dashboard</span>
+          <span className="text-[10px] tracking-tight">Dashboard</span>
+        </Link>
+        <Link
+          href="/eco-swap"
+          className="flex flex-col items-center gap-1 p-2 text-slate-400 hover:text-black transition-colors"
+        >
+          <span className="material-symbols-outlined text-xl">eco</span>
+          <span className="text-[10px] tracking-tight">Eco-Swap</span>
+        </Link>
+        <Link
+          href="/shopping-list"
+          className="flex flex-col items-center gap-1 p-2 text-slate-400 hover:text-black transition-colors"
+        >
+          <span className="material-symbols-outlined text-xl">
+            shopping_basket
+          </span>
+          <span className="text-[10px] tracking-tight">Pantry</span>
+        </Link>
+        <Link
+          href="/diet-plan"
+          className="flex flex-col items-center gap-1 p-2 text-slate-400 hover:text-black transition-colors"
+        >
+          <span className="material-symbols-outlined text-xl">
+            restaurant_menu
+          </span>
+          <span className="text-[10px] tracking-tight">Diet Plan</span>
+        </Link>
+        <Link
+          href="/profile"
+          className="flex flex-col items-center gap-1 p-2 text-slate-400 hover:text-black transition-colors"
+        >
+          <span className="material-symbols-outlined text-xl">person</span>
+          <span className="text-[10px] tracking-tight">Profile</span>
+        </Link>
+      </nav>
+
+      {/* 3. MOBILE FLOATING ACTION BUTTON: Dedicated macro meal logger accessible anywhere on touch viewports */}
+      <button
+        onClick={() => setIsModalOpen(true)}
+        className="lg:hidden fixed bottom-20 right-6 z-[100] bg-[#facc15] active:bg-[#fbd94b] text-[#231b00] h-14 w-14 rounded-full shadow-xl flex items-center justify-center active:scale-95 transition-all"
+      >
+        <span className="material-symbols-outlined text-2xl">add</span>
+      </button>
+
       {/* Main Content */}
       <main className="flex-1 p-6 lg:p-12 overflow-y-auto">
         <header className="flex justify-between items-center mb-12">
