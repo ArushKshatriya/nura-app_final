@@ -16,6 +16,7 @@ export default function ProfilePage() {
   const [location, setLocation] = useState("Thane, India");
   const [gender, setGender] = useState("male");
   const [weight, setWeight] = useState(55);
+  const [height, setHeight] = useState(170); // Default height in cm
   const [calorieGoal, setCalorieGoal] = useState(2000);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -125,6 +126,31 @@ export default function ProfilePage() {
   // Calculate dynamic limit: (Calories * 2 grams) / 1000 to get kg
   const carbonLimit = ((calorieGoal * 2) / 1000).toFixed(1);
 
+  // --- BMI CALCULATOR LOGIC ---
+  const calculateBMI = () => {
+    if (!weight || !height)
+      return { bmi: "0.0", status: "Unknown", color: "text-slate-400" };
+    const heightInMeters = height / 100;
+    const bmiValue = weight / (heightInMeters * heightInMeters);
+
+    let status = "Normal";
+    let color = "text-green-600";
+
+    if (bmiValue < 18.5) {
+      status = "Underweight";
+      color = "text-blue-500";
+    } else if (bmiValue >= 25 && bmiValue < 29.9) {
+      status = "Overweight";
+      color = "text-amber-500";
+    } else if (bmiValue >= 29.9) {
+      status = "Obese";
+      color = "text-red-500";
+    }
+
+    return { bmi: bmiValue.toFixed(1), status, color };
+  };
+
+  const { bmi, status, color } = calculateBMI();
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
@@ -396,20 +422,50 @@ export default function ProfilePage() {
             </div>
 
             <div className="space-y-8">
-              {/* Carbon Goal Display */}
-              <section className="bg-[#facc15] p-8 md:p-10 rounded-[2.5rem] shadow-[0_20px_50px_rgba(250,204,21,0.2)] flex flex-col items-center text-center">
-                <h3 className="text-[10px] font-bold text-[#735c00] uppercase tracking-widest mb-8">
-                  Carbon Limit
+              {/* BMI Live Display Dashboard Card */}
+              {/* BMI Live Display & Dynamic Plan Suggestion */}
+              <section className="bg-white p-8 md:p-10 rounded-[2.5rem] shadow-sm border border-slate-100 flex flex-col items-center text-center">
+                <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-6">
+                  Body Mass Index (BMI)
                 </h3>
 
-                <div className="w-32 h-32 rounded-full border-[6px] border-[#735c00]/10 flex items-center justify-center relative">
-                  <div className="text-4xl font-black text-[#231b00]">
-                    {carbonLimit}
+                <div className="w-32 h-32 rounded-full border-4 border-slate-100 flex flex-col items-center justify-center bg-slate-50/50 mb-6">
+                  <div className="text-4xl font-black text-[#1a1c1e] tracking-tight">
+                    {bmi}
+                  </div>
+                  <div
+                    className={`text-[11px] font-extrabold uppercase mt-1 ${color}`}
+                  >
+                    {status}
+                  </div>
+                </div>
+
+                {/* Dynamic NURA Plan Suggestion Area */}
+                <div className="w-full pt-6 border-t border-slate-100 space-y-4">
+                  <div>
+                    <span className="text-[9px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-full">
+                      Recommended Plan
+                    </span>
+                    <h4 className="text-base font-extrabold text-[#0f172a] capitalize mt-3">
+                      {currentPlan.replace("-", " ")}
+                    </h4>
+                    <p className="text-xs text-slate-400 font-medium mt-1 px-2 leading-relaxed">
+                      Based on your BMI status, this carbon-optimized tracking
+                      matrix fits your body profile perfectly.
+                    </p>
                   </div>
 
-                  <div className="absolute -bottom-3 bg-[#231b00] text-white text-[9px] font-bold px-3 py-1.5 rounded-lg uppercase tracking-tighter whitespace-nowrap">
-                    kg CO2e / Day
-                  </div>
+                  <button
+                    onClick={() =>
+                      router.push(`/diet-plan?plan=${currentPlan}`)
+                    }
+                    className="w-full py-3.5 px-4 bg-[#1a1c1e] hover:bg-black text-white rounded-2xl font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 group transition-all duration-300 active:scale-[0.98]"
+                  >
+                    <span>View Diet Plan</span>
+                    <span className="material-symbols-outlined text-sm text-[#facc15] transition-transform group-hover:translate-x-0.5">
+                      arrow_forward
+                    </span>
+                  </button>
                 </div>
               </section>
 
