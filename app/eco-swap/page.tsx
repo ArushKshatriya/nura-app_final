@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { Suspense, useState, useEffect } from "react";
 import Link from "next/link";
-import { Star, Leaf, Zap, Droplets } from "lucide-react";
+import { Leaf, Zap } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 // --- 1. TYPES & INTERFACES ---
@@ -41,6 +41,7 @@ function EcoSwapContent() {
     fetchMeal();
   }, [mealId]);
 
+  // Generate AI Suggestion based on loaded meal data
   useEffect(() => {
     async function getAISuggestion() {
       if (!mealData || suggestion) return;
@@ -52,10 +53,7 @@ function EcoSwapContent() {
           body: JSON.stringify({ mealName: mealData.meal_name }),
         });
 
-        // REMOVE the line: const text = await response.text();
-        // It "eats" the data before .json() can get to it.
-
-        const aiSwap = await response.json(); // This is the only call you need
+        const aiSwap = await response.json();
 
         if (aiSwap.error) throw new Error(aiSwap.error);
 
@@ -73,7 +71,7 @@ function EcoSwapContent() {
       }
     }
     getAISuggestion();
-  }, [mealData]);
+  }, [mealData, suggestion]);
 
   // Handle the database updates
   const handleSwap = async (mealId: string, swapData: SwapData) => {
@@ -94,7 +92,6 @@ function EcoSwapContent() {
       console.log("👤 Authenticated User ID:", user.id);
 
       // 2. Update the meal in the database
-      // Check: Are your columns 'meal_name' and 'co2_impact' exactly as written below?
       const { data: updateData, error: mealError } = await supabase
         .from("meals")
         .update({
@@ -103,7 +100,7 @@ function EcoSwapContent() {
         })
         .eq("id", mealId)
         .eq("user_id", user.id)
-        .select(); // Adding .select() helps verify if the update actually happened
+        .select();
 
       if (mealError) {
         console.error("❌ Supabase Meal Error:", mealError);
@@ -240,14 +237,12 @@ function EcoSwapContent() {
             </div>
 
             {/* Right Card: Recommendation */}
-            {/* RIGHT CARD: SUSTAINABILITY WIN */}
-            <div className="flex-1 p-8 bg-white border-2 border-[#facc15] rounded-[40px] shadow-sm relative">
+            <div className="flex-1 p-8 bg-white border-2 border-[#facc15] rounded-[40px] shadow-sm relative w-full">
               <div className="absolute top-6 left-8 bg-[#f1f8e9] text-[#2e7d32] px-4 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase">
                 Sustainability Win
               </div>
 
               <div className="mt-10">
-                {/* If suggestion exists, show the AI data. Otherwise, show the placeholder. */}
                 {suggestion ? (
                   <>
                     <h2 className="text-3xl font-bold text-gray-900 leading-tight">
@@ -281,7 +276,6 @@ function EcoSwapContent() {
                   </span>
                 </div>
                 <div className="text-right">
-                  {/* Update the CO2 number dynamically */}
                   <span className="text-xl font-bold text-[#2e7d32]">
                     {suggestion ? `${suggestion.carbon}kg CO2` : "0kg CO2"}
                   </span>
@@ -301,7 +295,6 @@ function EcoSwapContent() {
               }}
               className="group relative w-full max-w-sm overflow-hidden rounded-2xl bg-[#1a1c1e] px-8 py-5 transition-all duration-300 hover:bg-black hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40 disabled:hover:scale-100 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.2)]"
             >
-              {/* The Inner Content */}
               <div className="flex items-center justify-center gap-3">
                 {loading ? (
                   <>
@@ -323,8 +316,6 @@ function EcoSwapContent() {
                   </>
                 )}
               </div>
-
-              {/* Subtle Shine Effect on Hover */}
               <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/5 to-transparent transition-transform duration-1000 group-hover:translate-x-full" />
             </button>
             <Link
@@ -340,7 +331,7 @@ function EcoSwapContent() {
   );
 }
 
-// --- 3. THE MAIN PAGE COMPONENT (Wrapped in Suspense) ---
+// --- 3. THE MAIN PAGE COMPONENT ---
 export default function EcoSwapPage() {
   return (
     <Suspense
