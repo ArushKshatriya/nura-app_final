@@ -1,31 +1,20 @@
 "use client";
+
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  ShoppingBasket,
   Plus,
   Trash2,
   Leaf,
   Zap,
-  Info,
   CheckCircle2,
   AlertTriangle,
   CalendarDays,
   LayoutDashboard,
-  User,
-  UtensilsCrossed,
   Sparkles,
 } from "lucide-react";
-
-import { GoogleGenerativeAI } from "@google/generative-ai";
-
-const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!);
-const model = genAI.getGenerativeModel({
-  model: "gemini-1.5-flash",
-  generationConfig: { responseMimeType: "application/json" },
-});
 
 // Helper to define badge colors based on the user's plan
 const planStyles: Record<
@@ -74,7 +63,7 @@ export default function ShoppingList() {
     } = await supabase.auth.getUser();
     if (user) {
       const { data: profile } = await supabase
-        .from("Profiles")
+        .from("profiles")
         .select("full_name, current_plan")
         .eq("id", user.id)
         .single();
@@ -98,27 +87,22 @@ export default function ShoppingList() {
 
   // DYNAMIC CALCULATIONS for progress bars and logic
   const stats = useMemo(() => {
-    // 1. Sum up the actual numerical data Gemini saved to Supabase
     const totals = items.reduce(
       (acc, item) => ({
         protein: acc.protein + (item.protein || 0),
-        fiber: acc.fiber + (item.carbs || 0), // Or if you added a fiber column specifically
+        fiber: acc.fiber + (item.carbs || 0),
       }),
       { protein: 0, fiber: 0 },
     );
 
-    // 2. Set realistic weekly targets (in grams)
     const targets = {
-      protein: 700, // e.g., 700g protein goal for the week
-      fiber: 250, // e.g., 250g fiber/greens goal
+      protein: 700,
+      fiber: 250,
     };
 
     return {
-      // Percentage for the progress bars
       proteinPercent: Math.min((totals.protein / targets.protein) * 100, 100),
       greensPercent: Math.min((totals.fiber / targets.fiber) * 100, 100),
-
-      // Raw counts for the labels
       proteinCount: Math.round(totals.protein),
       greensCount: Math.round(totals.fiber),
     };
@@ -126,10 +110,9 @@ export default function ShoppingList() {
 
   const currentStyle =
     planStyles[userProfile.plan] || planStyles["eco-maintenance"];
+
   const addItem = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // 1. Basic Validation
     if (!newItem.trim() || isLoading) return;
 
     setIsLoading(true);
@@ -140,8 +123,6 @@ export default function ShoppingList() {
       } = await supabase.auth.getUser();
       if (!user) throw new Error("Authentication required");
 
-      // 2. The 2026 AI Prompt
-      // We give the AI a scale to prevent "hallucinated" high numbers
       const prompt = `
       Act as a nutrition and sustainability expert.
       Analyze the food item: "${newItem}".
@@ -161,7 +142,6 @@ export default function ShoppingList() {
       }
     `;
 
-      // 3. API Call to Gemini 3.1 Flash
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${process.env.NEXT_PUBLIC_GEMINI_API_KEY}`,
         {
@@ -181,11 +161,8 @@ export default function ShoppingList() {
       }
 
       const aiData = JSON.parse(rawData.candidates[0].content.parts[0].text);
-
-      // 4. Threshold Logic: Only store a swap if CO2 > 12
       const finalSwap = aiData.co2 > 12 ? aiData.swap : "";
 
-      // 5. Insert into Supabase
       const { error } = await supabase.from("shopping_list").insert([
         {
           user_id: user.id,
@@ -202,9 +179,8 @@ export default function ShoppingList() {
 
       if (error) throw error;
 
-      // 6. Success: Reset UI
       setNewItem("");
-      fetchData(); // Refresh the list
+      fetchData();
     } catch (err) {
       console.error("NURA AddItem Error:", err);
       alert("Could not add item. Check console for details.");
@@ -212,22 +188,21 @@ export default function ShoppingList() {
       setIsLoading(false);
     }
   };
+
   const handleSwap = async (id: string, newName: string) => {
-    // 1. Calculate the new (lower) CO2 for the swap item
-    // Usually swaps are low-impact, so we default to a green score
     const newCo2 = 1.2;
 
     const { error } = await supabase
       .from("shopping_list")
       .update({
         item_name: newName,
-        suggested_swap: null, // Clear the suggestion after swapping
+        suggested_swap: null,
         co2_impact: newCo2,
       })
       .eq("id", id);
 
     if (!error) {
-      fetchData(); // Refresh the list to show the new name
+      fetchData();
     } else {
       console.error("Error swapping item:", error.message);
     }
@@ -243,15 +218,12 @@ export default function ShoppingList() {
       } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Nuclear wipe for the shopping list only
       const { error } = await supabase
         .from("shopping_list")
         .delete()
         .eq("user_id", user.id);
 
       if (error) throw error;
-
-      // Clear the local UI state
       setItems([]);
     } catch (err: any) {
       console.error("Shopping Reset Error:", err.message);
@@ -260,70 +232,93 @@ export default function ShoppingList() {
 
   return (
     <div className="flex min-h-screen bg-[#f8f9fa] text-[#1a1c1e]">
-      {/* Sidebar */}
-      <aside className="fixed inset-y-0 left-0 w-64 border-r border-slate-100 p-8 flex flex-col gap-10 bg-white z-50">
-        <div className="flex items-center gap-2 font-bold text-xl tracking-tighter">
+      {/* SIDEBAR FOR BIG SCREENS / BOTTOM NAV FOR MOBILE */}
+      <aside className="fixed bottom-0 inset-x-0 bg-white border-t border-slate-100 p-4 flex flex-row justify-around items-center z-50 lg:sticky lg:inset-y-0 lg:left-0 lg:w-64 lg:h-screen lg:border-t-0 lg:border-r lg:p-8 lg:flex-col lg:justify-start lg:gap-10">
+        <div className="hidden lg:flex items-center gap-2 font-bold text-xl tracking-tighter">
           <span className="text-xl">🍃</span>
           <span className="text-[#1a1c1e]">NURA</span>
         </div>
 
-        <nav className="flex flex-col gap-2">
+        <nav className="flex w-full flex-row justify-around lg:flex-col lg:gap-2">
           <Link
             href="/dashboard"
-            className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-black transition-colors text-sm font-medium"
+            className={`flex flex-col lg:flex-row items-center gap-1 lg:gap-3 px-3 py-2 lg:px-4 lg:py-3 transition-colors text-xs lg:text-sm font-medium ${
+              pathname === "/dashboard"
+                ? "text-black font-bold"
+                : "text-slate-400 hover:text-black"
+            }`}
           >
-            <span className="material-symbols-outlined text-sm">dashboard</span>{" "}
-            Dashboard
+            <span className="material-symbols-outlined text-lg lg:text-sm">
+              dashboard
+            </span>{" "}
+            <span className="text-[10px] lg:text-sm">Dashboard</span>
           </Link>
           <Link
             href="/eco-swap"
-            className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-black transition-colors text-sm font-medium"
+            className={`flex flex-col lg:flex-row items-center gap-1 lg:gap-3 px-3 py-2 lg:px-4 lg:py-3 transition-colors text-xs lg:text-sm font-medium ${
+              pathname === "/eco-swap"
+                ? "text-black font-bold"
+                : "text-slate-400 hover:text-black"
+            }`}
           >
-            <span className="material-symbols-outlined text-sm">eco</span>{" "}
-            Eco-Swap
+            <span className="material-symbols-outlined text-lg lg:text-sm">
+              eco
+            </span>{" "}
+            <span className="text-[10px] lg:text-sm">Eco-Swap</span>
           </Link>
           <Link
             href="/shopping-list"
-            className="flex items-center gap-3 px-4 py-3 bg-[#facc15]/10 text-[#735c00] rounded-xl font-bold text-sm"
+            className="flex flex-col lg:flex-row items-center gap-1 lg:gap-3 px-4 py-2 lg:px-4 lg:py-3 bg-[#facc15]/10 text-[#735c00] rounded-xl font-bold text-xs lg:text-sm"
           >
-            <span className="material-symbols-outlined text-sm">
+            <span className="material-symbols-outlined text-lg lg:text-sm">
               shopping_basket
             </span>{" "}
-            Pantry
+            <span className="text-[10px] lg:text-sm">Pantry</span>
           </Link>
           <Link
             href="/diet-plan"
-            className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-black transition-colors text-sm font-medium"
+            className={`flex flex-col lg:flex-row items-center gap-1 lg:gap-3 px-3 py-2 lg:px-4 lg:py-3 transition-colors text-xs lg:text-sm font-medium ${
+              pathname === "/diet-plan"
+                ? "text-black font-bold"
+                : "text-slate-400 hover:text-black"
+            }`}
           >
-            <span className="material-symbols-outlined text-sm">
+            <span className="material-symbols-outlined text-lg lg:text-sm">
               restaurant_menu
             </span>{" "}
-            Diet Plan
+            <span className="text-[10px] lg:text-sm">Diet Plan</span>
           </Link>
           <Link
             href="/profile"
-            className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-black transition-colors text-sm font-medium"
+            className={`flex flex-col lg:flex-row items-center gap-1 lg:gap-3 px-3 py-2 lg:px-4 lg:py-3 transition-colors text-xs lg:text-sm font-medium ${
+              pathname === "/profile"
+                ? "text-black font-bold"
+                : "text-slate-400 hover:text-black"
+            }`}
           >
-            <span className="material-symbols-outlined text-sm">person</span>{" "}
-            Profile
+            <span className="material-symbols-outlined text-lg lg:text-sm">
+              person
+            </span>{" "}
+            <span className="text-[10px] lg:text-sm">Profile</span>
           </Link>
         </nav>
       </aside>
+
       {/* MAIN CONTENT AREA */}
-      <main className="flex-1 ml-64 p-12">
+      <main className="flex-1 p-6 md:p-12 pb-24 lg:pb-12">
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-10 items-start">
           {/* LEFT COLUMN: Header + Input + List */}
           <div className="xl:col-span-2 space-y-12">
             <header>
-              <h1 className="text-5xl font-black tracking-tight text-slate-900 mb-2">
+              <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 mb-2">
                 {userProfile.name.split(" ")[0]}'s Pantry
               </h1>
               <p className="text-slate-400 font-medium">
                 Your pantry is tracking live for the week.
               </p>
 
-              {/* NEW STRATEGY SECTION */}
-              <div className="mt-8 p-6 bg-white rounded-[2rem] border border-slate-100 shadow-sm inline-block">
+              {/* CURRENT STRATEGY SECTION */}
+              <div className="mt-8 p-6 bg-white rounded-[2rem] border border-slate-100 shadow-sm inline-block w-full sm:w-auto">
                 <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">
                   Current Strategy
                 </p>
@@ -349,14 +344,14 @@ export default function ShoppingList() {
                   value={newItem}
                   onChange={(e) => setNewItem(e.target.value)}
                   placeholder="Add item (e.g. Steak, Oats, Spinach...)"
-                  className="w-full p-6 bg-white rounded-[2rem] shadow-xl shadow-slate-200/40 border-none outline-none text-lg transition-all pr-40 focus:ring-4 focus:ring-[#facc15]/10"
+                  className="w-full p-6 bg-white rounded-[2rem] shadow-xl shadow-slate-200/40 border-none outline-none text-base md:text-lg transition-all pr-32 md:pr-40 focus:ring-4 focus:ring-[#facc15]/10"
                 />
                 <button
                   type="submit"
-                  disabled={!newItem.trim()}
-                  className="absolute right-3 top-3 bottom-3 px-8 bg-[#facc15] text-[#231b00] rounded-2xl font-black hover:bg-[#fbd94b] transition-all flex items-center gap-2 shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={!newItem.trim() || isLoading}
+                  className="absolute right-3 top-3 bottom-3 px-4 md:px-8 bg-[#facc15] text-[#231b00] rounded-2xl font-black hover:bg-[#fbd94b] transition-all flex items-center gap-2 shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base"
                 >
-                  <Plus size={20} strokeWidth={3} /> Add
+                  <Plus className="w-[18px] h-[18px] md:w-[20px] md:h-[20px]" strokeWidth={3} /> Add
                 </button>
               </form>
 
@@ -441,9 +436,9 @@ export default function ShoppingList() {
                       </div>
 
                       {!item.is_bought && item.suggested_swap && (
-                        <div className="mt-6 bg-[#fffbeb] rounded-2xl p-4 flex items-center justify-between border border-[#fef08a] animate-in fade-in slide-in-from-top-2 duration-500">
+                        <div className="mt-6 bg-[#fffbeb] rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-[#fef08a]">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-[#facc15] rounded-xl flex items-center justify-center shadow-sm">
+                            <div className="w-10 h-10 bg-[#facc15] rounded-xl flex items-center justify-center shadow-sm shrink-0">
                               <Zap size={18} fill="black" />
                             </div>
                             <div>
@@ -459,7 +454,7 @@ export default function ShoppingList() {
                             onClick={() =>
                               handleSwap(item.id, item.suggested_swap)
                             }
-                            className="bg-white px-5 py-2 rounded-xl text-[10px] font-black uppercase shadow-sm border border-[#fef08a] hover:bg-black hover:text-[#facc15] transition-all active:scale-95"
+                            className="bg-white w-full sm:w-auto text-center px-5 py-2 rounded-xl text-[10px] font-black uppercase shadow-sm border border-[#fef08a] hover:bg-black hover:text-[#facc15] transition-all active:scale-95"
                           >
                             Swap
                           </button>
@@ -472,8 +467,8 @@ export default function ShoppingList() {
             </div>
           </div>
 
-          {/* RIGHT PANELS: Now aligned with the Top of the page */}
-          <div className="space-y-8 sticky top-12">
+          {/* RIGHT PANELS */}
+          <div className="space-y-8 xl:sticky xl:top-12">
             <div className="bg-[#1a1c1e] p-8 rounded-[3rem] text-white shadow-2xl relative overflow-hidden">
               <h2 className="text-xl font-black mb-8 flex items-center gap-3">
                 <CalendarDays className="text-[#facc15]" size={20} /> Week
