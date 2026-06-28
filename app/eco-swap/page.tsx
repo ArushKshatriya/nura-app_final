@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import React, { Suspense, useState, useEffect } from "react";
 import Link from "next/link";
 import { Leaf, Zap } from "lucide-react";
@@ -19,6 +19,7 @@ interface SwapData {
 function EcoSwapContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const mealId = searchParams.get("id");
 
   const [mealData, setMealData] = useState<any>(null);
@@ -136,61 +137,63 @@ function EcoSwapContent() {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#fcfcfc]">
-      {/* Sidebar */}
-      <aside className="fixed inset-y-0 left-0 w-64 border-r border-slate-100 p-8 flex flex-col gap-10 bg-white z-50">
-        <div className="flex items-center gap-2 font-bold text-xl tracking-tighter">
-          <span className="text-xl">🍃</span>
-          <span className="text-[#1a1c1e]">NURA</span>
+    <div className="flex min-h-screen bg-[#fbfbf9] text-[#1a1c1e] font-sans">
+      {/* SIDEBAR FOR BIG SCREENS / BOTTOM NAV FOR MOBILE */}
+      <aside className="fixed bottom-0 inset-x-0 bg-white border-t border-slate-100 p-4 flex flex-row justify-around items-center z-50 lg:sticky lg:inset-y-0 lg:left-0 lg:w-64 lg:h-screen lg:border-t-0 lg:border-r lg:p-8 lg:flex-col lg:justify-start lg:gap-10">
+        <div className="hidden lg:flex items-center gap-2 font-bold text-xl tracking-tighter">
+          <span className="text-[#735c00]">🍃</span> NURA
         </div>
-
-        <nav className="flex flex-col gap-2">
+        <nav className="flex w-full flex-row justify-around lg:flex-col lg:gap-2">
           <Link
             href="/dashboard"
-            className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-black transition-colors text-sm font-medium"
+            className={`flex flex-col lg:flex-row items-center gap-1 lg:gap-3 px-3 py-2 lg:px-4 lg:py-3 transition-colors text-xs lg:text-sm font-medium ${
+              pathname === "/dashboard" ? "text-black font-bold" : "text-slate-400 hover:text-black"
+            }`}
           >
-            <span className="material-symbols-outlined text-sm">dashboard</span>{" "}
-            Dashboard
+            <span className="material-symbols-outlined text-lg lg:text-sm">dashboard</span>{" "}
+            <span className="text-[10px] lg:text-sm">Dashboard</span>
           </Link>
           <Link
             href="/eco-swap"
-            className="flex items-center gap-3 px-4 py-3 bg-[#facc15]/10 text-[#735c00] rounded-xl font-bold text-sm"
+            className="flex flex-col lg:flex-row items-center gap-1 lg:gap-3 px-4 py-2 lg:px-4 lg:py-3 bg-[#facc15]/10 text-[#735c00] rounded-xl font-bold text-xs lg:text-sm"
           >
-            <span className="material-symbols-outlined text-sm">eco</span>{" "}
-            Eco-Swap
+            <span className="material-symbols-outlined text-lg lg:text-sm">eco</span>{" "}
+            <span className="text-[10px] lg:text-sm">Eco-Swap</span>
           </Link>
           <Link
             href="/shopping-list"
-            className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-black transition-colors text-sm font-medium"
+            className={`flex flex-col lg:flex-row items-center gap-1 lg:gap-3 px-3 py-2 lg:px-4 lg:py-3 transition-colors text-xs lg:text-sm font-medium ${
+              pathname === "/shopping-list" ? "text-black font-bold" : "text-slate-400 hover:text-black"
+            }`}
           >
-            <span className="material-symbols-outlined text-sm">
-              shopping_basket
-            </span>{" "}
-            Pantry
+            <span className="material-symbols-outlined text-lg lg:text-sm">shopping_basket</span>{" "}
+            <span className="text-[10px] lg:text-sm">Pantry</span>
           </Link>
           <Link
             href="/diet-plan"
-            className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-black transition-colors text-sm font-medium"
+            className={`flex flex-col lg:flex-row items-center gap-1 lg:gap-3 px-3 py-2 lg:px-4 lg:py-3 transition-colors text-xs lg:text-sm font-medium ${
+              pathname === "/diet-plan" ? "text-black font-bold" : "text-slate-400 hover:text-black"
+            }`}
           >
-            <span className="material-symbols-outlined text-sm">
-              restaurant_menu
-            </span>{" "}
-            Diet Plan
+            <span className="material-symbols-outlined text-lg lg:text-sm">restaurant_menu</span>{" "}
+            <span className="text-[10px] lg:text-sm">Diet Plan</span>
           </Link>
           <Link
             href="/profile"
-            className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-black transition-colors text-sm font-medium"
+            className={`flex flex-col lg:flex-row items-center gap-1 lg:gap-3 px-3 py-2 lg:px-4 lg:py-3 transition-colors text-xs lg:text-sm font-medium ${
+              pathname === "/profile" ? "text-black font-bold" : "text-slate-400 hover:text-black"
+            }`}
           >
-            <span className="material-symbols-outlined text-sm">person</span>{" "}
-            Profile
+            <span className="material-symbols-outlined text-lg lg:text-sm">person</span>{" "}
+            <span className="text-[10px] lg:text-sm">Profile</span>
           </Link>
         </nav>
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 ml-64 p-8 lg:p-16">
+      <div className="flex-1 p-6 md:p-12 overflow-y-auto pb-28 lg:pb-12">
         <header className="max-w-4xl mx-auto mb-12 text-center lg:text-left">
-          <h1 className="text-5xl font-bold text-[#1a1c1e] mb-4 tracking-tight">
+          <h1 className="text-4xl md:text-5xl font-extrabold text-[#0f172a] mb-4 tracking-tight">
             Eco-Swap
           </h1>
           <p className="text-lg text-slate-500 max-w-xl leading-relaxed mx-auto lg:mx-0">
@@ -231,7 +234,7 @@ function EcoSwapContent() {
 
             {/* Impact Connector */}
             <div className="z-10 -my-4 lg:my-0 lg:-mx-8">
-              <div className="w-14 h-14 bg-[#facc15] rounded-full flex items-center justify-center shadow-lg border-8 border-[#fcfcfc]">
+              <div className="w-14 h-14 bg-[#facc15] rounded-full flex items-center justify-center shadow-lg border-8 border-[#fbfbf9]">
                 <Zap className="text-[#231b00]" size={20} fill="#231b00" />
               </div>
             </div>
@@ -336,7 +339,7 @@ export default function EcoSwapPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-[#fcfcfc] font-bold text-slate-400">
+        <div className="flex min-h-screen items-center justify-center bg-[#fbfbf9] font-bold text-[#735c00]">
           Initializing Eco-Swap...
         </div>
       }
