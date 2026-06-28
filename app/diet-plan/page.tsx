@@ -205,7 +205,7 @@ export default function DietPlan() {
   return (
     <div className="flex min-h-screen bg-[#fbfbf9] text-[#1a1c1e] font-sans">
       {/* Sidebar Layout panel */}
-      <aside className="w-64 border-r border-slate-100 p-8 flex flex-col gap-10 bg-white hidden lg:flex shrink-0">
+      <aside className="w-64 border-r border-slate-100 p-8 flex-col gap-10 bg-white hidden lg:flex shrink-0">
         <div className="flex items-center gap-2 font-bold text-xl tracking-tighter">
           <span className="text-[#735c00]">🍃</span> NURA
         </div>
