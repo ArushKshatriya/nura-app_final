@@ -372,7 +372,8 @@ export default function Dashboard() {
       </button>
 
       {/* Main Content */}
-      <main className="flex-1 p-6 lg:p-12 overflow-y-auto">
+     {/* Main Container Stream */}
+      <main className="flex-1 p-4 sm:p-6 lg:p-12 overflow-y-auto max-w-7xl mx-auto w-full pb-32 lg:pb-12">
         <header className="flex justify-between items-center mb-12">
           <div>
             <h1 className="text-3xl lg:text-4xl font-bold tracking-tight">
