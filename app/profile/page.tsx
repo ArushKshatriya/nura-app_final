@@ -1,12 +1,14 @@
 "use client";
-import { useState, useEffect, useMemo } from "react";
+
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Carrot, Bone, Leaf, Fish, Check } from "lucide-react";
 
 export default function ProfilePage() {
   const router = useRouter();
+  const pathname = usePathname();
 
   // State for user data
   const [fullName, setFullName] = useState("");
@@ -14,26 +16,12 @@ export default function ProfilePage() {
   const [location, setLocation] = useState("Thane, India");
   const [gender, setGender] = useState("male");
   const [weight, setWeight] = useState(55);
-  const [height, setHeight] = useState<number | string>("");
-  const [heightUnit, setHeightUnit] = useState("cm");
   const [calorieGoal, setCalorieGoal] = useState(2000);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [dietType, setDietType] = useState("non-veg");
   const [currentPlan, setCurrentPlan] = useState("eco-maintenance");
-  const handleUnitChange = (newUnit: string) => {
-    if (height && height !== "") {
-      const currentVal = Number(height);
-      if (newUnit === "cm" && heightUnit === "ft") {
-        // Feet to CM (1 ft = 30.48 cm)
-        setHeight(Math.round(currentVal * 30.48));
-      } else if (newUnit === "ft" && heightUnit === "cm") {
-        // CM to Feet (1 cm = 0.0328084 ft)
-        setHeight((currentVal * 0.0328084).toFixed(1));
-      }
-    }
-    setHeightUnit(newUnit);
-  };
+
   const dietOptions = [
     {
       id: "veg",
@@ -61,68 +49,42 @@ export default function ProfilePage() {
     },
   ];
 
-  // BMI Calculation Logic
-  const bmiData = useMemo(() => {
-    if (!height || !weight) return null;
+  const getProfile = useCallback(async () => {
+    setLoading(true);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    let hInMeters = 0;
-    if (heightUnit === "cm") {
-      hInMeters = Number(height) / 100;
-    } else {
-      hInMeters = Number(height) * 0.3048; // ft to meters
+    if (user) {
+      setEmail(user.email || "");
+
+      const { data: profileData } = await supabase
+        .from("Profiles")
+        .select(
+          "full_name, gender, calorie_goal, weight, location, diet_type, current_plan",
+        )
+        .eq("id", user.id)
+        .single();
+
+      if (profileData) {
+        setFullName(profileData.full_name || "");
+        setGender(profileData.gender || "male");
+        setCalorieGoal(profileData.calorie_goal || 2000);
+        setWeight(profileData.weight || 55);
+        setLocation(profileData.location || "Thane, India");
+
+        if (profileData.diet_type) setDietType(profileData.diet_type);
+        if (profileData.current_plan) setCurrentPlan(profileData.current_plan);
+      } else {
+        setFullName(user.user_metadata?.full_name || "");
+      }
     }
-
-    const score = Number(weight) / (hInMeters * hInMeters);
-    const scoreFixed = score.toFixed(1);
-
-    let category = { label: "Healthy", color: "text-green-500", plan: "eco-maintenance/build" };
-    const s = parseFloat(scoreFixed);
-
-    if (s < 18.5) category = { label: "Underweight", color: "text-blue-500", plan: "weight-gain" };
-    else if (s >= 25 && s < 30) category = { label: "Overweight", color: "text-orange-500", plan: "weight-loss" };
-    else if (s >= 30) category = { label: "Obese", color: "text-red-500", plan: "weight-loss" };
-
-    return { score: scoreFixed, ...category };
-  }, [height, weight, heightUnit]);
+    setLoading(false);
+  }, []);
 
   useEffect(() => {
-    async function getProfile() {
-      setLoading(true);
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (user) {
-        setEmail(user.email || "");
-
-        const { data: profileData } = await supabase
-          .from("Profiles")
-          .select(
-            "full_name, gender, calorie_goal, weight, height, location, diet_type, current_plan",
-          )
-          .eq("id", user.id)
-          .single();
-
-        if (profileData) {
-          setFullName(profileData.full_name || "");
-          setGender(profileData.gender || "male");
-          setCalorieGoal(profileData.calorie_goal || 2000);
-          setWeight(profileData.weight || 55);
-          setHeight(profileData.height || "");
-          setLocation(profileData.location || "Thane, India");
-
-          // 2. SET the states so the UI highlights the correct cards
-          if (profileData.diet_type) setDietType(profileData.diet_type);
-          if (profileData.current_plan)
-            setCurrentPlan(profileData.current_plan);
-        } else {
-          setFullName(user.user_metadata?.full_name || "");
-        }
-      }
-      setLoading(false);
-    }
     getProfile();
-  }, []);
+  }, [getProfile]);
 
   const handleUpdateProfile = async () => {
     setSaving(true);
@@ -140,7 +102,6 @@ export default function ProfilePage() {
           calorie_goal: calorieGoal,
           location: location,
           weight: weight,
-          height: height,
           diet_type: dietType,
         })
         .eq("id", user.id);
@@ -160,8 +121,10 @@ export default function ProfilePage() {
       setSaving(false);
     }
   };
+
   // Calculate dynamic limit: (Calories * 2 grams) / 1000 to get kg
   const carbonLimit = ((calorieGoal * 2) / 1000).toFixed(1);
+
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
@@ -184,60 +147,83 @@ export default function ProfilePage() {
 
   return (
     <div className="flex min-h-screen bg-[#fbfbf9] text-[#1a1c1e] font-sans">
-      {/* Sidebar */}
-      <aside className="w-64 border-r border-slate-100 p-8 flex flex-col gap-10 bg-white sticky top-0 h-screen">
-        <div className="flex items-center gap-2 font-bold text-xl tracking-tighter">
+      {/* SIDEBAR FOR BIG SCREENS / BOTTOM NAV FOR MOBILE */}
+      <aside className="fixed bottom-0 inset-x-0 bg-white border-t border-slate-100 p-4 flex flex-row justify-around items-center z-50 lg:sticky lg:inset-y-0 lg:left-0 lg:w-64 lg:h-screen lg:border-t-0 lg:border-r lg:p-8 lg:flex-col lg:justify-start lg:gap-10">
+        <div className="hidden lg:flex items-center gap-2 font-bold text-xl tracking-tighter">
           <span className="text-[#735c00]">🍃</span> NURA
         </div>
-        <nav className="flex flex-col gap-2">
+        <nav className="flex w-full flex-row justify-around lg:flex-col lg:gap-2">
           <Link
             href="/dashboard"
-            className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-black transition-colors text-sm font-medium"
+            className={`flex flex-col lg:flex-row items-center gap-1 lg:gap-3 px-3 py-2 lg:px-4 lg:py-3 transition-colors text-xs lg:text-sm font-medium ${
+              pathname === "/dashboard"
+                ? "text-black font-bold"
+                : "text-slate-400 hover:text-black"
+            }`}
           >
-            <span className="material-symbols-outlined text-sm">dashboard</span>{" "}
-            Dashboard
+            <span className="material-symbols-outlined text-lg lg:text-sm">
+              dashboard
+            </span>{" "}
+            <span className="text-[10px] lg:text-sm">Dashboard</span>
           </Link>
           <Link
             href="/eco-swap"
-            className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-black transition-colors text-sm font-medium"
+            className={`flex flex-col lg:flex-row items-center gap-1 lg:gap-3 px-3 py-2 lg:px-4 lg:py-3 transition-colors text-xs lg:text-sm font-medium ${
+              pathname === "/eco-swap"
+                ? "text-black font-bold"
+                : "text-slate-400 hover:text-black"
+            }`}
           >
-            <span className="material-symbols-outlined text-sm">eco</span>{" "}
-            Eco-Swap
+            <span className="material-symbols-outlined text-lg lg:text-sm">
+              eco
+            </span>{" "}
+            <span className="text-[10px] lg:text-sm">Eco-Swap</span>
           </Link>
           <Link
             href="/shopping-list"
-            className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-black transition-colors text-sm font-medium"
+            className={`flex flex-col lg:flex-row items-center gap-1 lg:gap-3 px-3 py-2 lg:px-4 lg:py-3 transition-colors text-xs lg:text-sm font-medium ${
+              pathname === "/shopping-list"
+                ? "text-black font-bold"
+                : "text-slate-400 hover:text-black"
+            }`}
           >
-            <span className="material-symbols-outlined text-sm">
+            <span className="material-symbols-outlined text-lg lg:text-sm">
               shopping_basket
             </span>{" "}
-            Pantry
+            <span className="text-[10px] lg:text-sm">Pantry</span>
           </Link>
           <Link
             href="/diet-plan"
-            className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-black transition-colors text-sm font-medium"
+            className={`flex flex-col lg:flex-row items-center gap-1 lg:gap-3 px-3 py-2 lg:px-4 lg:py-3 transition-colors text-xs lg:text-sm font-medium ${
+              pathname === "/diet-plan"
+                ? "text-black font-bold"
+                : "text-slate-400 hover:text-black"
+            }`}
           >
-            <span className="material-symbols-outlined text-sm">
+            <span className="material-symbols-outlined text-lg lg:text-sm">
               restaurant_menu
             </span>{" "}
-            Diet Plan
+            <span className="text-[10px] lg:text-sm">Diet Plan</span>
           </Link>
           <Link
             href="/profile"
-            className="flex items-center gap-3 px-4 py-3 bg-[#facc15]/10 text-[#735c00] rounded-xl font-bold text-sm"
+            className="flex flex-col lg:flex-row items-center gap-1 lg:gap-3 px-4 py-2 lg:px-4 lg:py-3 bg-[#facc15]/10 text-[#735c00] rounded-xl font-bold text-xs lg:text-sm"
           >
-            <span className="material-symbols-outlined text-sm">person</span>{" "}
-            Profile
+            <span className="material-symbols-outlined text-lg lg:text-sm">
+              person
+            </span>{" "}
+            <span className="text-[10px] lg:text-sm">Profile</span>
           </Link>
         </nav>
       </aside>
 
-      <main className="flex-1 p-12 overflow-y-auto">
+      {/* MAIN CONTENT AREA */}
+      <main className="flex-1 p-6 md:p-12 overflow-y-auto pb-24 lg:pb-12">
         <div className="max-w-5xl mx-auto">
           {/* Header */}
-          <div className="flex items-center gap-8 mb-12">
-            <div className="relative">
-              <div className="w-32 h-32 rounded-[2.5rem] bg-slate-200 overflow-hidden border-4 border-white shadow-xl">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 mb-12 text-center sm:text-left">
+            <div className="relative shrink-0">
+              <div className="w-28 h-28 rounded-[2.5rem] bg-slate-200 overflow-hidden border-4 border-white shadow-xl">
                 <img
                   src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${fullName || "Arush"}`}
                   alt="Avatar"
@@ -252,7 +238,7 @@ export default function ProfilePage() {
               <p className="text-slate-400 font-medium mt-1">
                 Curate your sustainable lifestyle journey.
               </p>
-              <h2 className="text-md font-medium text-slate-400 mt-4 italic">
+              <h2 className="text-sm font-medium text-amber-600 mt-3 italic">
                 Don't forget to press "Save Changes" after updating your
                 profile!
               </h2>
@@ -262,12 +248,12 @@ export default function ProfilePage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8">
               {/* Personal Info */}
-              <section className="bg-white p-10 rounded-[2.5rem] shadow-sm border border-slate-50 space-y-8">
+              <section className="bg-white p-6 md:p-10 rounded-[2.5rem] shadow-sm border border-slate-50 space-y-8">
                 <h2 className="text-[13px] font-bold text-slate-400 uppercase tracking-[0.2em]">
                   Personal Information
                 </h2>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-[11px] font-bold text-slate-400 uppercase px-1">
                       Full Name
@@ -292,29 +278,29 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Gender Toggle */}
                   <div className="space-y-2">
                     <label className="text-[11px] font-bold text-slate-400 uppercase px-1">
                       Gender
                     </label>
-                    <div className="flex p-1.5 bg-[#f1f3f5] rounded-2xl w-fit">
+                    <div className="flex p-1.5 bg-[#f1f3f5] rounded-2xl w-full sm:w-fit overflow-x-auto">
                       {["male", "female", "other"].map((opt) => (
                         <button
                           key={opt}
                           onClick={() => setGender(opt)}
-                          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${gender === opt
-                            ? "bg-white text-black shadow-sm"
-                            : "text-slate-400 hover:text-slate-600"
-                            }`}
+                          className={`flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                            gender === opt
+                              ? "bg-white text-black shadow-sm"
+                              : "text-slate-400 hover:text-slate-600"
+                          }`}
                         >
                           {opt.charAt(0).toUpperCase() + opt.slice(1)}
                         </button>
                       ))}
                     </div>
                   </div>
-                  {/* Weight Input Card */}
-                  {/* Final Weight Input - Matches Gender Style */}
+                  {/* Weight Input */}
                   <div className="space-y-2">
                     <label className="text-[11px] font-bold text-slate-400 uppercase px-1 tracking-wider">
                       Current Weight
@@ -335,64 +321,31 @@ export default function ProfilePage() {
                       </span>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase px-1 tracking-wider">
-                      Height
-                    </label>
-                    <div className="flex gap-3">
-                      <div className="relative flex-1 group">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-lg group-focus-within:text-[#facc15] transition-colors">
-                          straighten
-                        </span>
-                        <input
-                          type="number"
-                          step="0.1"
-                          value={height}
-                          onChange={(e) => setHeight(e.target.value)}
-                          className="w-full pl-12 pr-4 py-4 rounded-2xl bg-[#f1f3f5] outline-none font-bold text-lg focus:bg-white focus:ring-2 focus:ring-[#facc15] transition-all placeholder:text-slate-300"
-                          placeholder={heightUnit === "cm" ? "175" : "5.8"}
-                        />
-                      </div>
-
-                      <div className="flex p-1.5 bg-[#f1f3f5] rounded-2xl">
-                        {["cm", "ft"].map((u) => (
-                          <button
-                            key={u}
-                            type="button"
-                            onClick={() => handleUnitChange(u)}
-                            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${heightUnit === u
-                              ? "bg-white text-black shadow-sm"
-                              : "text-slate-400 hover:text-slate-600"
-                              }`}
-                          >
-                            {u}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
                 </div>
               </section>
 
-              {/* Section: Dietary Preference (The New Feature) */}
-              <section className="bg-white p-8 rounded-[40px] border border-gray-100 shadow-sm">
+              {/* Section: Dietary Preference */}
+              <section className="bg-white p-6 md:p-8 rounded-[40px] border border-gray-100 shadow-sm">
                 <div className="mb-6">
                   <h2 className="text-[13px] font-bold text-slate-400 uppercase tracking-[0.2em]">
                     Dietary Preference
                   </h2>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {dietOptions.map((option) => (
                     <button
                       key={option.id}
-                      onClick={() => setDietType(option.id)} // Replace with setDietType if you've added that state
-                      className={`relative flex items-center gap-4 p-5 rounded-3xl border-2 transition-all duration-300 ${dietType === option.id // Replace with dietType state check
-                        ? "border-black bg-gray-50 shadow-inner"
-                        : "border-gray-50 hover:border-gray-200 bg-white"
-                        }`}
+                      onClick={() => setDietType(option.id)}
+                      className={`relative flex items-center gap-4 p-5 rounded-3xl border-2 transition-all duration-300 ${
+                        dietType === option.id
+                          ? "border-black bg-gray-50 shadow-inner"
+                          : "border-gray-50 hover:border-gray-200 bg-white"
+                      }`}
                     >
-                      <div className={`p-3 rounded-2xl ${option.color}`}>
+                      <div
+                        className={`p-3 rounded-2xl shrink-0 ${option.color}`}
+                      >
                         {option.icon}
                       </div>
                       <span className="font-bold text-sm tracking-tight text-gray-900">
@@ -410,7 +363,7 @@ export default function ProfilePage() {
               </section>
 
               {/* Preferences */}
-              <section className="bg-white p-10 rounded-[2.5rem] shadow-sm border border-slate-50">
+              <section className="bg-white p-6 md:p-10 rounded-[2.5rem] shadow-sm border border-slate-50">
                 <h2 className="text-[13px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-8">
                   Daily Nutrition Goal
                 </h2>
@@ -424,16 +377,16 @@ export default function ProfilePage() {
                         type="number"
                         value={calorieGoal}
                         onChange={(e) =>
-                          setCalorieGoal(parseInt(e.target.value))
+                          setCalorieGoal(parseInt(e.target.value) || 0)
                         }
                         className="w-full px-5 py-4 rounded-2xl bg-[#f1f3f5] outline-none font-bold text-lg"
                       />
-                      <span className="absolute right-12 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-sm">
+                      <span className="absolute right-5 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-sm">
                         kcal
                       </span>
                     </div>
                   </div>
-                  <div className="text-slate-300">
+                  <div className="text-slate-300 hidden sm:block">
                     <span className="material-symbols-outlined text-4xl">
                       monitoring
                     </span>
@@ -444,25 +397,24 @@ export default function ProfilePage() {
 
             <div className="space-y-8">
               {/* Carbon Goal Display */}
-              <section className="bg-[#facc15] p-10 rounded-[2.5rem] shadow-[0_20px_50px_rgba(250,204,21,0.2)] flex flex-col items-center text-center">
+              <section className="bg-[#facc15] p-8 md:p-10 rounded-[2.5rem] shadow-[0_20px_50px_rgba(250,204,21,0.2)] flex flex-col items-center text-center">
                 <h3 className="text-[10px] font-bold text-[#735c00] uppercase tracking-widest mb-8">
                   Carbon Limit
                 </h3>
 
                 <div className="w-32 h-32 rounded-full border-[6px] border-[#735c00]/10 flex items-center justify-center relative">
-                  {/* Dynamic Value Here */}
                   <div className="text-4xl font-black text-[#231b00]">
                     {carbonLimit}
                   </div>
 
-                  <div className="absolute -bottom-3 bg-[#231b00] text-white text-[9px] font-bold px-3 py-1.5 rounded-lg uppercase tracking-tighter">
+                  <div className="absolute -bottom-3 bg-[#231b00] text-white text-[9px] font-bold px-3 py-1.5 rounded-lg uppercase tracking-tighter whitespace-nowrap">
                     kg CO2e / Day
                   </div>
                 </div>
               </section>
 
               {/* Security */}
-              <section className="bg-white p-10 rounded-[2.5rem] shadow-sm border border-slate-50 space-y-6">
+              <section className="bg-white p-6 md:p-10 rounded-[2.5rem] shadow-sm border border-slate-50 space-y-6">
                 <h2 className="text-[13px] font-bold text-slate-400 uppercase tracking-[0.2em]">
                   Security & Account
                 </h2>
@@ -479,56 +431,17 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* BMI Intelligence Card - Moved to Full Width for better layout */}
-          {bmiData && (
-            <div className="mt-8 bg-slate-950 p-6 md:p-8 rounded-[2.5rem] text-white flex flex-col md:flex-row items-center justify-between border border-white/5 shadow-2xl animate-in fade-in slide-in-from-top-4 duration-500">
-              <div className="flex items-center gap-6 mb-4 md:mb-0">
-                <div className="flex flex-col">
-                  <p className="text-[13px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2">
-                    Health Analysis (BMI)
-                  </p>
-                  <div className="flex items-baseline gap-3">
-                    <span className="text-5xl font-black italic tracking-tighter">
-                      {bmiData.score}
-                    </span>
-                    <div className="flex flex-col">
-                      <span className={`text-sm font-black uppercase tracking-tight ${bmiData.color}`}>
-                        {bmiData.label}
-                      </span>
-                      <span className="text-[10px] text-slate-500 font-bold uppercase">
-                        Condition
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              ̰
-              <div className="flex flex-row md:flex-col items-center md:items-end gap-4 w-full md:w-auto pt-4 md:pt-0 border-t md:border-t-0 border-white/10">
-                <div className="flex-1 md:text-right">
-                  <p className="text-[12px] font-black text-slate-500 uppercase tracking-widest mb-1">
-                    Recommended Strategy
-                  </p>
-                  <p className="text-xs font-bold text-white uppercase tracking-tight">
-                    {bmiData.plan.replace('-', ' ')}
-                  </p>
-                </div>
-                <Link href="/diet-plan">
-                  <button className="bg-[#facc15] text-black text-[15px] font-black py-3 px-6 rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-[0_10px_20px_rgba(250,204,21,0.2)]">
-                    CHOOSE PLAN
-                  </button>
-                </Link>
-              </div>
-            </div>
-          )}
-
           <div className="flex justify-end items-center gap-6 mt-12 pt-8 border-t border-slate-100">
-            <button className="text-sm font-bold text-slate-400 hover:text-slate-600 transition-colors">
+            <button
+              onClick={() => getProfile()}
+              className="text-sm font-bold text-slate-400 hover:text-slate-600 transition-colors"
+            >
               Discard
             </button>
             <button
               onClick={handleUpdateProfile}
               disabled={saving}
-              className="px-12 py-4 rounded-2xl bg-[#facc15] hover:bg-[#fbd94b] text-[#231b00] font-bold shadow-xl active:scale-95 transition-all disabled:opacity-50"
+              className="px-8 md:px-12 py-4 rounded-2xl bg-[#facc15] hover:bg-[#fbd94b] text-[#231b00] font-bold shadow-xl active:scale-95 transition-all disabled:opacity-50"
             >
               {saving ? "Saving..." : "Save Changes"}
             </button>
